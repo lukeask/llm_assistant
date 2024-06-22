@@ -1,0 +1,21 @@
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, APIRouter
+router = APIRouter()
+router.active_connections = []
+
+@router.websocket("/")
+async def websocket_endpoint(websocket:WebSocket):
+    await websocket.accept()
+    router.active_connections.append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        router.active_connections.remove(websocket)
+
+
+@router.post("/play_wav_url")
+async def send_message(wav_url:str):
+    for connection in router.active_connections:
+        await connection.send_text(wav_url)
+    return "sent message to all clients"
